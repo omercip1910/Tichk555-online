@@ -3,61 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Barricade Platinum Plus</title>
+    <title>Barricade Platinum - Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
         :root { --orange: #ff8c00; --bg: #030303; --card: #111; }
         body { background: var(--bg); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; overflow: hidden; }
         
-        /* Klasik Menü Tasarımı */
-        .profile-bar { width: 100%; max-width: 350px; background: var(--card); padding: 15px; border-radius: 15px; border: 2px solid #222; margin-bottom: 10px; text-align: center; }
+        /* Üst Panel Bilgileri */
+        .info-container { width: 100%; max-width: 350px; margin-bottom: 10px; }
+        .profile-bar { background: var(--card); padding: 10px; border-radius: 12px; border: 2px solid #222; text-align: center; margin-bottom: 8px; }
         .id-label { font-size: 0.6rem; color: var(--orange); letter-spacing: 2px; font-weight: bold; }
-        .id-value { font-size: 1.1rem; color: #fff; font-weight: 900; margin: 5px 0; }
+        .id-value { font-size: 1rem; color: #fff; font-weight: 900; margin-top: 3px; }
 
-        .btn-main { width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #333; border-radius: 8px; font-weight: 900; cursor: pointer; background: #000; color: #fff; }
-        .btn-main.active { border-color: var(--orange); background: var(--orange); color: #000; }
+        .scoreboard { display: flex; gap: 8px; margin-bottom: 10px; }
+        .score-card { flex: 1; background: var(--card); border: 2px solid #222; padding: 8px; border-radius: 12px; text-align: center; transition: 0.3s; }
+        .score-card.active { border-color: var(--orange); box-shadow: 0 0 10px var(--orange); }
+        .score-num { font-size: 1.4rem; color: var(--orange); font-weight: 900; }
+        .score-name { font-size: 0.7rem; font-weight: bold; color: #888; text-transform: uppercase; }
+
+        /* Butonlar */
+        .btn-main { width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #333; border-radius: 8px; font-weight: 900; cursor: pointer; background: #000; color: #fff; text-transform: uppercase; }
+        .btn-main.orange { border-color: var(--orange); background: var(--orange); color: #000; }
         
+        /* Modallar */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .modal-box { background: #000; border: 2px solid var(--orange); border-radius: 20px; padding: 25px; width: 280px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid var(--orange); background: #111; color: white; text-align: center; box-sizing: border-box; outline: none; }
         
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid var(--orange); background: #111; color: white; text-align: center; box-sizing: border-box; }
-        
-        canvas { border: 3px solid #1a1a1a; border-radius: 15px; background: #000; display: block; max-width: 100%; height: auto; }
-        #status-msg { color: var(--orange); font-weight: bold; margin: 10px 0; height: 20px; }
-        
+        /* Oyun Alanı */
         #game-area { display: none; flex-direction: column; align-items: center; }
+        canvas { border: 3px solid #1a1a1a; border-radius: 15px; background: #000; touch-action: none; }
+        #status-msg { color: var(--orange); font-weight: bold; margin: 5px 0; font-size: 0.9rem; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
-    <div id="main-menu">
+    <div id="main-menu" style="width: 300px;">
         <div class="profile-bar">
             <div class="id-label">BARRICADE PLATINUM</div>
-            <div class="id-value">ANA MENÜ</div>
+            <div class="id-value">SİSTEM ÇEVRİMİÇİ</div>
         </div>
-        <button class="btn-main active" onclick="startBotMode()">BOT İLE OYNA</button>
+        <button class="btn-main orange" onclick="startBotMode()">BOT İLE OYNA</button>
         <button class="btn-main" onclick="showOnlineMenu()">ONLINE MOD</button>
+        <div style="text-align: center; margin-top: 15px;">
+            <input type="text" id="user-name-input" placeholder="İSİM YAZ..." style="width: 80%; border-color: #333;" maxlength="10">
+        </div>
     </div>
 
     <div id="online-modal" class="modal-overlay">
         <div class="modal-box">
-            <h1 style="color:var(--orange); font-size:1.2rem;">ONLINE ODA</h1>
-            <button class="btn-main" style="background:var(--orange); color:black;" onclick="createRoom()">ODA KUR</button>
-            <div style="margin:10px 0;">veya</div>
+            <h1 style="color:var(--orange); font-size:1.1rem; margin-top:0;">ONLINE ODA</h1>
+            <button class="btn-main orange" onclick="createRoom()">ODA KUR</button>
+            <div style="margin:10px 0; color:#555;">— VEYA —</div>
             <input type="text" id="join-code-input" placeholder="4 HANELİ KOD" maxlength="4">
             <button class="btn-main" onclick="joinRoom()">ODAYA KATIL</button>
-            <button class="btn-main" style="border:none; color:#888;" onclick="closeModals()">İPTAL</button>
+            <button class="btn-main" style="border:none; color:#888; font-size:0.7rem;" onclick="closeModals()">GERİ DÖN</button>
         </div>
     </div>
 
     <div id="game-area">
-        <div id="status-msg">HAZIR</div>
-        <div id="room-info" style="display:none; background:#111; padding:5px 15px; border-radius:20px; margin-bottom:10px; font-size:0.8rem;">
-            ODA KODU: <span id="display-room-code" style="font-weight:bold; color:var(--orange);">----</span>
+        <div class="info-container">
+            <div class="scoreboard">
+                <div id="card0" class="score-card active">
+                    <div id="name0" class="score-name">SEN</div>
+                    <div id="wall0" class="score-num">10</div>
+                </div>
+                <div id="card1" class="score-card">
+                    <div id="name1" class="score-name">BOT</div>
+                    <div id="wall1" class="score-num">10</div>
+                </div>
+            </div>
+            <div id="status-msg">HAZIR</div>
         </div>
+
         <canvas id="game" width="350" height="350"></canvas>
-        <button class="btn-main" style="margin-top:20px; width:150px;" onclick="location.reload()">MENÜYE DÖN</button>
+        
+        <div id="room-display" style="display:none; margin-top:10px; font-size:0.7rem; color:#444;">
+            ODA: <span id="display-room-code" style="color:var(--orange); font-weight:bold;">----</span>
+        </div>
+        <button class="btn-main" style="margin-top:15px; width:140px; font-size:0.7rem;" onclick="location.reload()">MENÜYE DÖN</button>
     </div>
 
 <script>
@@ -71,7 +96,7 @@
     const db = firebase.database();
 
     let roomRef = null;
-    let myRole = 0; // 0: Player 1 (Bot or Host), 1: Player 2 (Joiner)
+    let myRole = 0; 
     let isOnline = false;
     let state = { turn: 0, walls: [], players: [{x:3, y:6, w:10, c:'#ff4757', ty:0}, {x:3, y:0, w:10, c:'#2e86de', ty:6}], over: false };
 
@@ -83,6 +108,9 @@
     function closeModals() { document.getElementById('online-modal').style.display = 'none'; }
 
     function startBotMode() {
+        const name = document.getElementById('user-name-input').value.trim() || "SEN";
+        document.getElementById('name0').innerText = name;
+        document.getElementById('name1').innerText = "BOT";
         isOnline = false;
         myRole = 0;
         document.getElementById('main-menu').style.display = 'none';
@@ -91,8 +119,10 @@
     }
 
     function createRoom() {
-        isOnline = true;
-        myRole = 0;
+        const name = document.getElementById('user-name-input').value.trim() || "HOST";
+        document.getElementById('name0').innerText = name;
+        document.getElementById('name1').innerText = "RAKİP";
+        isOnline = true; myRole = 0;
         const code = Math.floor(1000 + Math.random() * 9000).toString();
         roomRef = db.ref('rooms/' + code);
         roomRef.set({ state: state, status: "waiting" });
@@ -102,8 +132,10 @@
     function joinRoom() {
         const code = document.getElementById('join-code-input').value.trim();
         if(code.length !== 4) return alert("4 haneli kod gir!");
-        isOnline = true;
-        myRole = 1;
+        const name = document.getElementById('user-name-input').value.trim() || "GUEST";
+        document.getElementById('name1').innerText = name;
+        document.getElementById('name0').innerText = "RAKİP";
+        isOnline = true; myRole = 1;
         roomRef = db.ref('rooms/' + code);
         roomRef.once('value', s => {
             if(!s.exists()) return alert("Oda bulunamadı!");
@@ -116,25 +148,42 @@
         closeModals();
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('game-area').style.display = 'flex';
-        document.getElementById('room-info').style.display = 'block';
+        document.getElementById('room-display').style.display = 'block';
         document.getElementById('display-room-code').innerText = code;
         
         roomRef.on('value', s => {
             const data = s.val();
             if(!data) return;
             state = data.state;
-            document.getElementById('status-msg').innerText = data.status === "waiting" ? "RAKİP BEKLENİYOR..." : (state.turn === myRole ? "SIRA SENDE!" : "RAKİPTE...");
+            updateUI(data.status);
             draw();
         });
     }
 
+    function updateUI(status) {
+        const msg = document.getElementById('status-msg');
+        if(status === "waiting") msg.innerText = "RAKİP BEKLENİYOR...";
+        else if(state.over) msg.innerText = "OYUN BİTTİ!";
+        else msg.innerText = state.turn === myRole ? "SIRA SENDE!" : "RAKİPTE...";
+
+        document.getElementById('wall0').innerText = state.players[0].w;
+        document.getElementById('wall1').innerText = state.players[1].w;
+        document.getElementById('card0').className = state.turn === 0 ? 'score-card active' : 'score-card';
+        document.getElementById('card1').className = state.turn === 1 ? 'score-card active' : 'score-card';
+    }
+
     function draw() {
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,350,350);
-        ctx.strokeStyle = '#222';
-        for(let i=0; i<7; i++) for(let j=0; j<7; j++) ctx.strokeRect(i*CELL, j*CELL, CELL, CELL);
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+        for(let i=0; i<=7; i++) {
+            ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,350); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(350,i*CELL); ctx.stroke();
+        }
         state.players.forEach((p, i) => {
+            ctx.shadowBlur = 10; ctx.shadowColor = p.c;
             ctx.beginPath(); ctx.arc(p.x*CELL+25, p.y*CELL+25, 18, 0, Math.PI*2);
             ctx.fillStyle = p.c; ctx.fill();
+            ctx.shadowBlur = 0;
             if(state.turn === i) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
         });
     }
@@ -148,17 +197,19 @@
         let p = state.players[myRole];
         if(Math.abs(cx - p.x) + Math.abs(cy - p.y) === 1) {
             p.x = cx; p.y = cy;
+            if(p.y === p.ty) state.over = true;
             state.turn = 1 - state.turn;
             if(isOnline) roomRef.update({ state: state });
-            else { draw(); if(state.turn === 1) setTimeout(botMove, 500); }
+            else { updateUI(); draw(); if(!state.over) setTimeout(botMove, 600); }
         }
     };
 
     function botMove() {
         let b = state.players[1];
         if(b.y < 6) b.y++; 
+        if(b.y === 6) state.over = true;
         state.turn = 0;
-        draw();
+        updateUI(); draw();
     }
 </script>
 </body>
