@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Barricade Platinum Plus</title>
-    <!-- Firebase SDK (Bağlantı için gerekli) -->
+    <!-- Firebase SDK - Gerçek zamanlı bağlantı için gerekli -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
@@ -15,7 +15,6 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; overflow: hidden;
         }
-
         .profile-bar {
             width: 100%; max-width: 350px; background: var(--card); padding: 15px;
             border-radius: 15px; border: 2px solid #222; margin-bottom: 15px;
@@ -23,7 +22,6 @@
         }
         .id-label { font-size: 0.65rem; color: var(--orange); letter-spacing: 2px; font-weight: bold; margin-bottom: 5px; }
         .id-value { font-size: 1rem; color: #fff; font-weight: 900; font-family: monospace; margin-bottom: 10px; }
-        
         .name-edit-area { display: flex; gap: 8px; }
         .name-input-mini {
             flex: 1; background: #000; border: 1px solid #333; color: #fff;
@@ -34,11 +32,9 @@
             background: var(--orange); color: #000; border: none; padding: 0 15px;
             border-radius: 8px; font-weight: 900; font-size: 0.7rem; cursor: pointer;
         }
-
         .header { text-align: center; margin-bottom: 10px; }
         h1 { margin: 0; font-size: 1.1rem; color: var(--orange); letter-spacing: 1.5px; font-weight: 900; }
         #msg { color: #fff; font-size: 0.8rem; min-height: 18px; margin: 5px 0; font-weight: bold; }
-
         .scoreboard { display: flex; gap: 8px; width: 100%; max-width: 350px; margin-bottom: 10px; }
         .card { 
             flex: 1; background: var(--card); border: 2px solid #222; padding: 8px; 
@@ -47,7 +43,6 @@
         .card.active { border-color: var(--orange); box-shadow: 0 0 15px var(--orange); }
         .num { font-size: 1.6rem; color: var(--orange); font-weight: 900; }
         .timer { font-size: 0.8rem; color: #fff; margin-top: 5px; font-family: monospace; }
-
         .mode-selection { display: flex; gap: 5px; width: 100%; max-width: 350px; margin-bottom: 10px; }
         .btn-main { 
             flex: 1; padding: 12px 5px; font-size: 0.65rem; font-weight: 900; 
@@ -56,17 +51,14 @@
         .btn-main.active[data-mode="bot"] { border-color: var(--orange); background: var(--orange); color: #000; }
         .btn-main.active[data-mode="pvp"] { border-color: var(--blue); background: var(--blue); color: #000; }
         .btn-main.active[data-mode="online"] { border-color: #f1c40f; background: #f1c40f; color: #000; }
-
         .diff-selection { display: flex; gap: 4px; margin-bottom: 10px; }
         .btn-diff { 
             background: #111; color: #555; border: 1px solid #333; 
             padding: 6px 12px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; cursor: pointer;
         }
         .btn-diff.active { border-color: #fff; color: #fff; background: #222; }
-
         .canvas-container { border: 3px solid #1a1a1a; border-radius: 15px; background: #000; }
         canvas { display: block; touch-action: none; border-radius: 12px; }
-
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000;
@@ -100,12 +92,6 @@
         <div class="modal-box">
             <h1 style="font-size: 1.1rem; color: var(--orange);">ONLINE LOBBY</h1>
             <input type="text" id="target-room-id" class="neon-input" placeholder="Rakip ID Giriniz">
-            <label style="font-size:0.7rem; color:#888">SÜRE LİMİTİ</label>
-            <select id="time-limit" class="neon-input">
-                <option value="0">SINIRSIZ</option>
-                <option value="180">3 DAKİKA</option>
-                <option value="300">5 DAKİKA</option>
-            </select>
             <button class="btn-action" onclick="startOnlineRoom()">EŞLEŞMEYİ BAŞLAT</button>
             <button class="btn-action" style="background:#222; color:#fff" onclick="toggleRoomModal(false)">GERİ DÖN</button>
         </div>
@@ -146,33 +132,34 @@
     </div>
 
 <script>
-    // --- FIREBASE KURULUMU ---
-    // Buradaki bilgileri Firebase Konsolundan kendi bilgilerinle değiştir
+    // --- 1. FIREBASE KONFİGÜRASYONU ---
+    // Burayı kendi Firebase Console bilgilerinizle doldurmalısınız.
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
+        apiKey: "BURAYA_API_KEY_GELECEK",
         authDomain: "barricade-platinum-plus.firebaseapp.com",
         databaseURL: "https://barricade-platinum-plus-default-rtdb.firebaseio.com",
         projectId: "barricade-platinum-plus",
         storageBucket: "barricade-platinum-plus.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        messagingSenderId: "BURAYA_ID_GELECEK",
+        appId: "BURAYA_APP_ID_GELECEK"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // --- 2. OYUN DEĞİŞKENLERİ ---
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     const GRID = 7, CELL = 350/7;
     
     let state = {
         turn: 0, walls: [], over: false, mode: 'bot', diff: 'insane',
-        players: [{x:3, y:6, w:10, c:'#ff4757', ty:0, time: 0}, {x:3, y:0, w:10, c:'#2e86de', ty:6, time: 0}],
-        timerInterval: null
+        players: [{x:3, y:6, w:10, c:'#ff4757', ty:0, time: 0}, {x:3, y:0, w:10, c:'#2e86de', ty:6, time: 0}]
     };
 
     let currentRoom = null;
-    let myRole = null; // 'host' (p1) veya 'guest' (p2)
+    let myRole = null; // 'host' (P1) veya 'guest' (P2)
 
+    // --- 3. KULLANICI AYARLARI ---
     function initUser() {
         let myId = localStorage.getItem('barricade_fixed_id');
         if(!myId) {
@@ -185,34 +172,28 @@
             localStorage.setItem('barricade_fixed_id', myId);
         }
         document.getElementById('display-my-id').innerText = myId;
-        
         let savedName = localStorage.getItem('barricade_name') || "PLAYER";
         document.getElementById('name-p1').innerText = savedName.toUpperCase();
         document.getElementById('user-name-input').value = savedName;
     }
 
     function updateName() {
-        const input = document.getElementById('user-name-input');
-        const val = input.value.trim().substring(0, 12);
+        const val = document.getElementById('user-name-input').value.trim().substring(0, 12);
         if(val.length >= 2) {
             localStorage.setItem('barricade_name', val);
             document.getElementById('name-p1').innerText = val.toUpperCase();
             document.getElementById('msg').innerText = "İSİM KAYDEDİLDİ";
-            input.blur();
         }
     }
 
-    function toggleRoomModal(s) { 
-        document.getElementById('room-screen').style.display = s ? 'flex' : 'none'; 
-    }
+    // --- 4. MOD VE DİNAMİKLER ---
+    function toggleRoomModal(s) { document.getElementById('room-screen').style.display = s ? 'flex' : 'none'; }
 
     function setMode(m) {
         if(currentRoom) db.ref('rooms/' + currentRoom).off();
         currentRoom = null;
         state.mode = m;
-        document.querySelectorAll('.btn-main').forEach(b => {
-            b.classList.toggle('active', b.getAttribute('data-mode') === m);
-        });
+        document.querySelectorAll('.btn-main').forEach(b => b.classList.toggle('active', b.getAttribute('data-mode') === m));
         document.getElementById('diff-box').style.visibility = (m === 'bot') ? 'visible' : 'hidden';
         document.getElementById('p2-label').innerText = (m === 'pvp' || m === 'online') ? "RAKİP" : "BOT";
         reset();
@@ -226,16 +207,14 @@
     }
 
     function reset() {
-        clearInterval(state.timerInterval);
         state.players[0].x=3; state.players[0].y=6; state.players[0].w=10;
         state.players[1].x=3; state.players[1].y=0; state.players[1].w=10;
         state.walls=[]; state.turn=0; state.over=false;
         document.getElementById('msg').innerText = "SIRA SENDE";
-        updateTimerDisplay();
         draw();
     }
 
-    // --- ONLINE LOBBY VE SYNC ---
+    // --- 5. ONLINE MANTIK (FIREBASE) ---
     function startOnlineRoom() {
         const targetId = document.getElementById('target-room-id').value.trim();
         const myId = localStorage.getItem('barricade_fixed_id');
@@ -282,14 +261,7 @@
         }
     }
 
-    function updateTimerDisplay() {
-        [0,1].forEach(i => {
-            const p = state.players[i];
-            document.getElementById('t'+i).innerText = p.time > 0 ? 
-                `${Math.floor(p.time/60)}:${(p.time%60).toString().padStart(2,'0')}` : "--:--";
-        });
-    }
-
+    // --- 6. ÇİZİM VE ALGORTİMALAR ---
     function draw() {
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,350,350);
         ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
@@ -325,9 +297,17 @@
             let c = q.shift(); if(c.y === ty) return c.d;
             for(let [dx,dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
                 let nx=c.x+dx, ny=c.y+dy;
-                if(nx>=0 && nx<GRID && ny>=0 && ny<GRID && !vis.has(nx+','+ny) !isBlocked(c.x,c.y,nx,ny,walls)) { vis.add(nx+','+ny); q.push({x:nx, y:ny, d:c.d+1}); } return 999; canvas.addEventListener('mousedown',> {
+                if(nx>=0 && nx<GRID && ny>=0 && ny<GRID && !vis.has(nx+','+ny) && !isBlocked(c.x,c.y,nx,ny,walls)) {
+                    vis.add(nx+','+ny); q.push({x:nx, y:ny, d:c.d+1});
+                }
+            }
+        }
+        return 999;
+    }
+
+    // --- 7. ETKİLEŞİM ---
+    canvas.addEventListener('mousedown', (e) => {
         if(state.over) return;
-        // Online modda başkasının sırasıysa engelle
         if(state.mode === 'online' && ((myRole === 'host' && state.turn !== 0) || (myRole === 'guest' && state.turn !== 1))) return;
         if(state.mode === 'bot' && state.turn === 1) return;
 
@@ -335,9 +315,11 @@
         const x = (e.clientX-r.left)*(350/r.width), y = (e.clientY-r.top)*(350/r.height);
         const cx = Math.floor(x/CELL), cy = Math.floor(y/CELL), mx = x%CELL, my = y%CELL;
 
+        // Duvar Koyma
         if(mx > CELL*0.8 && cx < 6 && placeWall(cx, cy, 'v', state.turn)) { syncOnlineMove(); next(); return; }
         if(my > CELL*0.8 && cy < 6 && placeWall(cx, cy, 'h', state.turn)) { syncOnlineMove(); next(); return; }
 
+        // Hareket Etme
         let p = state.players[state.turn];
         if(Math.abs(cx-p.x)+Math.abs(cy-p.y)===1 && !isBlocked(p.x,p.y,cx,cy,state.walls)) {
             p.x=cx; p.y=cy; 
@@ -362,17 +344,17 @@
         if(!state.over && state.mode === 'bot' && state.turn === 1) setTimeout(botAction, 300);
     }
 
-    // --- AKILLI VE ÇÖKMEYEN BOT ---
+    // --- 8. AKILLI BOT (ÇÖKMEYEN VERSİYON) ---
     function botAction() {
         if (state.over) return;
         let b = state.players[1], p = state.players[0];
         let pDist = getPathLen(p.x, p.y, 0, state.walls);
         let bDist = getPathLen(b.x, b.y, 6, state.walls);
 
-        // İmkansız modda akıllı engel koyma
+        // İmkansız modda akıllı engel denemesi
         if (state.diff === 'insane' && b.w > 0 && pDist < bDist && Math.random() > 0.4) {
             let orientations = ['h', 'v'];
-            for(let i=0; i<10; i++) { // Max 10 deneme
+            for(let i=0; i<8; i++) { // Sınırlı deneme ile çökmeyi önler
                 let rx = p.x + Math.floor(Math.random()*3)-1;
                 let ry = p.y + Math.floor(Math.random()*3)-1;
                 if(rx>=0 && rx<6 && ry>=0 && ry<6 && placeWall(rx, ry, orientations[i%2], 1)) {
@@ -381,9 +363,11 @@
             }
         }
 
+        // En kısa yola yürü
         let moves = [[0,1],[1,0],[-1,0],[0,-1]].filter(m => {
             let nx=b.x+m[0], ny=b.y+m[1];
-            return nx>=0 && nx<GRID && ny>=0 && ny<GRID && !isBlocked(b.x,b.y,nx,ny,state.walls); }).sort((a,> getPathLen(b.x+a[0], b.y+a[1], 6, state.walls) - getPathLen(b.x+b_m[0], b.y+b_m[1], 6, state.walls));
+            return nx>=0 && nx<GRID && ny>=0 && ny<GRID && !isBlocked(b.x,b.y,nx,ny,state.walls);
+        }).sort((a, b_m) => getPathLen(b.x+a[0], b.y+a[1], 6, state.walls) - getPathLen(b.x+b_m[0], b.y+b_m[1], 6, state.walls));
 
         if (moves.length) { b.x += moves[0][0]; b.y += moves[0][1]; }
         if (b.y === 6) end("BOT KAZANDI!"); else next();
