@@ -149,7 +149,8 @@
     function updateStatusMsg() {
         const isMyTurn = (myRole === 'host' && state.turn === 0) || (myRole === 'guest' && state.turn === 1);
         const msg = document.getElementById('msg');
-        if(state.over) { msg.innerText = "OYUN BİTTİ!"; return; }
+        if(state.over) return;
+        
         if(state.mode === 'online') {
             msg.innerText = isMyTurn ? "SENİN SIRAN!" : "RAKİP SIRASI...";
             msg.style.color = isMyTurn ? "var(--orange)" : "#888";
@@ -158,16 +159,14 @@
         }
     }
 
-    // --- KRİTİK ALGORİTMA: YOL KONTROLÜ (BFS) ---
+    // --- YOL KONTROLÜ (BFS) ---
     function getPathLen(px, py, targetY, tempWalls) {
         let queue = [{x: px, y: py, dist: 0}];
         let visited = new Set();
         visited.add(px + ',' + py);
-
         while (queue.length > 0) {
             let curr = queue.shift();
-            if (curr.y === targetY) return curr.dist; // Hedefe ulaşıldı
-
+            if (curr.y === targetY) return curr.dist;
             const neighbors = [[0, 1], [0, -1], [1, 0], [-1, 0]];
             for (let [dx, dy] of neighbors) {
                 let nx = curr.x + dx, ny = curr.y + dy;
@@ -179,7 +178,7 @@
                 }
             }
         }
-        return 999; // Yol kapalı
+        return 999;
     }
 
     function isBlocked(x1, y1, x2, y2, walls) {
@@ -189,28 +188,16 @@
         return false;
     }
 
-    // --- DUVAR KOYMA: HAPİS ENGELİ BURADA ---
+    // --- DUVAR KOYMA (Hapis Kontrollü) ---
     function placeWall(x, y, t, pIdx) {
         if (state.players[pIdx].w <= 0) return false;
-        if (!state.walls) state.walls = [];
-        
-        // Zaten orada duvar var mı?
         if (state.walls.some(w => w.x === x && w.y === y && w.t === t)) return false;
-
-        // GEÇİCİ DUVAR TESTİ:
         let tempWalls = [...state.walls, {x, y, t}];
-        
-        // Her iki oyuncu için de hala bir yol var mı kontrol et
         let p1Path = getPathLen(state.players[0].x, state.players[0].y, state.players[0].ty, tempWalls);
         let p2Path = getPathLen(state.players[1].x, state.players[1].y, state.players[1].ty, tempWalls);
-
         if (p1Path < 999 && p2Path < 999) {
-            // Yol açık, duvarı kalıcı yap
-            state.walls.push({x, y, t});
-            state.players[pIdx].w--;
-            return true;
+            state.walls.push({x, y, t}); state.players[pIdx].w--; return true;
         } else {
-            // Yol kapanıyor!
             document.getElementById('msg').innerText = "HAPİS ETMEK YASAKTIR!";
             document.getElementById('msg').style.color = "red";
             setTimeout(updateStatusMsg, 1500);
@@ -218,25 +205,35 @@
         }
     }
 
-    // --- DİĞER FONKSİYONLAR ---
+    // --- AKILLI BOT AKSİYONU ---
+    function botAction() {
+        if (state.over) return;
+        let b = state.players[1];
+        let possibleMoves = [{dx:0,dy:1},{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:-1}];
+        let bestMove = null;
+        let minDistance = 1000;
+
+        possibleMoves.forEach(m => {
+            let nx = b.x + m.dx, ny = b.y + m.dy;
+            if (nx >= 0 && nx < GRID && ny >= 0 && ny < GRID && !isBlocked(b.x, b.y, nx, ny, state.walls)) {
+                let dist = getPathLen(nx, ny, b.ty, state.walls);
+                if (dist < minDistance) { minDistance = dist; bestMove = {x: nx, y: ny}; }
+            }
+        });
+
+        if (bestMove) {
+            b.x = bestMove.x; b.y = bestMove.y;
+            if (b.y === b.ty) end("BOT KAZANDI!"); else next();
+        } else { next(); }
+    }
+
+    // --- OYUN DÖNGÜSÜ ---
     function draw() {
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,350,350);
         ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
-        for(let i=0; i<=GRID; i++) { 
-            ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,350); ctx.stroke(); 
-            ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(350,i*CELL); ctx.stroke(); 
-        }
-        if(!state.walls) state.walls = [];
-        state.walls.forEach(w => { 
-            ctx.fillStyle = '#ff8c00'; 
-            if(w.t==='v') ctx.fillRect((w.x+1)*CELL-4, w.y*CELL+4, 8, CELL-8); 
-            else ctx.fillRect(w.x*CELL+4, (w.y+1)*CELL-4, CELL-8, 8); 
-        });
-        state.players.forEach((p, i) => { 
-            ctx.beginPath(); ctx.arc(p.x*CELL+CELL/2, p.y*CELL+CELL/2, CELL*0.35, 0, Math.PI*2); 
-            ctx.fillStyle=p.c; ctx.fill(); 
-            if(state.turn===i){ ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke(); } 
-        });
+        for(let i=0; i<=GRID; i++) { ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,350); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(350,i*CELL); ctx.stroke(); }
+        state.walls.forEach(w => { ctx.fillStyle = '#ff8c00'; if(w.t==='v') ctx.fillRect((w.x+1)*CELL-4, w.y*CELL+4, 8, CELL-8); else ctx.fillRect(w.x*CELL+4, (w.y+1)*CELL-4, CELL-8, 8); });
+        state.players.forEach((p, i) => { ctx.beginPath(); ctx.arc(p.x*CELL+CELL/2, p.y*CELL+CELL/2, CELL*0.35, 0, Math.PI*2); ctx.fillStyle=p.c; ctx.fill(); if(state.turn===i){ ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke(); } });
         document.getElementById('w0').innerText = state.players[0].w; document.getElementById('w1').innerText = state.players[1].w;
         document.getElementById('c0').className = state.turn===0?'card active':'card'; document.getElementById('c1').className = state.turn===1?'card active':'card';
     }
@@ -246,41 +243,22 @@
         const isMyTurn = (myRole === 'host' && state.turn === 0) || (myRole === 'guest' && state.turn === 1);
         if(state.mode === 'online' && !isMyTurn) return; 
         if(state.mode === 'bot' && state.turn === 1) return;
-
         const r = canvas.getBoundingClientRect();
         const scaleX = 350 / r.width, scaleY = 350 / r.height;
         let cX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
         let cY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
         const x = (cX - r.left) * scaleX, y = (cY - r.top) * scaleY;
         const cx = Math.floor(x/CELL), cy = Math.floor(y/CELL), mx = x%CELL, my = y%CELL;
-
         if(mx > CELL*0.8 && cx < 6 && placeWall(cx, cy, 'v', state.turn)) { next(); return; }
         if(my > CELL*0.8 && cy < 6 && placeWall(cx, cy, 'h', state.turn)) { next(); return; }
-
         let p = state.players[state.turn];
-        if(Math.abs(cx-p.x)+Math.abs(cy-p.y)===1 && !isBlocked(p.x,p.y,cx,cy,state.walls)) {
-            p.x=cx; p.y=cy; 
-            if(p.y === p.ty) end(state.turn === 0 ? "KAZANDIN!" : "RAKİP KAZANDI!"); 
-            else next();
-        }
+        if(Math.abs(cx-p.x)+Math.abs(cy-p.y)===1 && !isBlocked(p.x,p.y,cx,cy,state.walls)) { p.x=cx; p.y=cy; if(p.y === p.ty) end(state.turn === 0 ? "KAZANDIN!" : "RAKİP KAZANDI!"); else next(); }
     }
 
-    function next() { state.turn = 1 - state.turn; syncMove(); draw(); updateStatusMsg(); if(!state.over && state.mode === 'bot' && state.turn === 1) setTimeout(botAction, 500); }
-
-    function botAction() {
-        if (state.over) return;
-        let b = state.players[1];
-        let moves = [[0,1],[1,0],[-1,0],[0,-1]].filter(m => {
-            let nx=b.x+m[0], ny=b.y+m[1];
-            return nx>=0 && nx<GRID && ny>=0 && ny<GRID && !isBlocked(b.x,b.y,nx,ny,state.walls);
-        });
-        if (moves.length) { let m = moves[Math.floor(Math.random()*moves.length)]; b.x += m[0]; b.y += m[1]; }
-        if (b.y === 6) end("BOT KAZANDI!"); else next();
-    }
-
-    function end(m) { state.over=true; document.getElementById('msg').innerText = m; syncMove(); draw(); }
-    function setMode(m) { if(currentRoom) db.ref('rooms/'+currentRoom).off(); currentRoom=null; state.mode=m; reset(); }
-    function reset() { state.walls=[]; state.over=false; state.turn=0; state.players=JSON.parse(JSON.stringify(initialPlayers)); draw(); }
+    function next() { state.turn = 1 - state.turn; syncMove(); draw(); updateStatusMsg(); if(!state.over && state.mode === 'bot' && state.turn === 1) setTimeout(botAction, 600); }
+    function end(m) { state.over=true; document.getElementById('msg').innerText = m; document.getElementById('msg').style.color = "var(--orange)"; syncMove(); draw(); }
+    function setMode(m) { if(currentRoom) db.ref('rooms/'+currentRoom).off(); currentRoom=null; state.mode=m; reset(); document.getElementById('m_bot').className = m==='bot'?'btn-main active':'btn-main'; document.getElementById('m_online').className = m==='online'?'btn-main active':'btn-main'; }
+    function reset() { state.walls=[]; state.over=false; state.turn=0; state.players=JSON.parse(JSON.stringify(initialPlayers)); draw(); updateStatusMsg(); }
     function toggleRoomModal(s) { document.getElementById('room-screen').style.display = s?'flex':'none'; }
     function updateName() { const v = document.getElementById('user-name-input').value.trim(); if(v.length>=2){ localStorage.setItem('barricade_name', v); document.getElementById('name-p1').innerText = v.toUpperCase(); } }
 
