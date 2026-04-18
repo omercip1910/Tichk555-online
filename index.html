@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Barricade Platinum Plus</title>
-    <!-- Firebase SDK - Gerçek zamanlı bağlantı için gerekli -->
+    <title>Tichk Platinum Plus</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
@@ -80,7 +80,7 @@
 <body>
 
     <div class="profile-bar">
-        <div class="id-label">MY BARRICADE ID</div>
+        <div class="id-label">MY TICHK ID</div>
         <div class="id-value" id="display-my-id">---</div>
         <div class="name-edit-area">
             <input type="text" id="user-name-input" class="name-input-mini" placeholder="Yeni İsim..." maxlength="12">
@@ -90,7 +90,7 @@
 
     <div id="room-screen" class="modal-overlay" style="display:none">
         <div class="modal-box">
-            <h1 style="font-size: 1.1rem; color: var(--orange);">ONLINE LOBBY</h1>
+            <h1 style="font-size: 1.1rem; color: var(--orange);">TICHK LOBBY</h1>
             <input type="text" id="target-room-id" class="neon-input" placeholder="Rakip ID Giriniz">
             <button class="btn-action" onclick="startOnlineRoom()">EŞLEŞMEYİ BAŞLAT</button>
             <button class="btn-action" style="background:#222; color:#fff" onclick="toggleRoomModal(false)">GERİ DÖN</button>
@@ -98,13 +98,13 @@
     </div>
 
     <div class="header">
-        <h1>BARRICADE PLATINUM</h1>
+        <h1>TICHK PLATINUM</h1>
         <div id="msg">SİSTEM ÇEVRİMİÇİ</div>
     </div>
 
     <div class="scoreboard">
         <div id="c0" class="card active">
-            <small id="name-p1" style="color:var(--orange); font-weight:bold">PLAYER</small>
+            <small id="name-p1" style="color:var(--orange); font-weight:bold">TICHK</small>
             <div class="num" id="w0">10</div>
             <div class="timer" id="t0">--:--</div>
         </div>
@@ -132,8 +132,7 @@
     </div>
 
 <script>
-    // --- 1. FIREBASE KONFİGÜRASYONU ---
-    // Burayı kendi Firebase Console bilgilerinizle doldurmalısınız.
+    // --- FIREBASE KONFİGÜRASYONU ---
     const firebaseConfig = {
         apiKey: "BURAYA_API_KEY_GELECEK",
         authDomain: "barricade-platinum-plus.firebaseapp.com",
@@ -146,7 +145,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 2. OYUN DEĞİŞKENLERİ ---
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     const GRID = 7, CELL = 350/7;
@@ -157,11 +155,10 @@
     };
 
     let currentRoom = null;
-    let myRole = null; // 'host' (P1) veya 'guest' (P2)
+    let myRole = null;
 
-    // --- 3. KULLANICI AYARLARI ---
     function initUser() {
-        let myId = localStorage.getItem('barricade_fixed_id');
+        let myId = localStorage.getItem('tichk_fixed_id');
         if(!myId) {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             myId = '';
@@ -169,10 +166,10 @@
                 myId += chars.charAt(Math.floor(Math.random() * chars.length));
                 if(i === 3) myId += "-";
             }
-            localStorage.setItem('barricade_fixed_id', myId);
+            localStorage.setItem('tichk_fixed_id', myId);
         }
         document.getElementById('display-my-id').innerText = myId;
-        let savedName = localStorage.getItem('barricade_name') || "PLAYER";
+        let savedName = localStorage.getItem('barricade_name') || "TICHK";
         document.getElementById('name-p1').innerText = savedName.toUpperCase();
         document.getElementById('user-name-input').value = savedName;
     }
@@ -186,7 +183,6 @@
         }
     }
 
-    // --- 4. MOD VE DİNAMİKLER ---
     function toggleRoomModal(s) { document.getElementById('room-screen').style.display = s ? 'flex' : 'none'; }
 
     function setMode(m) {
@@ -214,15 +210,12 @@
         draw();
     }
 
-    // --- 5. ONLINE MANTIK (FIREBASE) ---
     function startOnlineRoom() {
         const targetId = document.getElementById('target-room-id').value.trim();
-        const myId = localStorage.getItem('barricade_fixed_id');
+        const myId = localStorage.getItem('tichk_fixed_id');
         if(targetId.length < 5) return;
-
         currentRoom = targetId;
         const roomRef = db.ref('rooms/' + targetId);
-
         roomRef.once('value', (snapshot) => {
             if (!snapshot.exists()) {
                 myRole = 'host';
@@ -261,7 +254,6 @@
         }
     }
 
-    // --- 6. ÇİZİM VE ALGORTİMALAR ---
     function draw() {
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,350,350);
         ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
@@ -305,7 +297,6 @@
         return 999;
     }
 
-    // --- 7. ETKİLEŞİM ---
     canvas.addEventListener('mousedown', (e) => {
         if(state.over) return;
         if(state.mode === 'online' && ((myRole === 'host' && state.turn !== 0) || (myRole === 'guest' && state.turn !== 1))) return;
@@ -315,11 +306,9 @@
         const x = (e.clientX-r.left)*(350/r.width), y = (e.clientY-r.top)*(350/r.height);
         const cx = Math.floor(x/CELL), cy = Math.floor(y/CELL), mx = x%CELL, my = y%CELL;
 
-        // Duvar Koyma
         if(mx > CELL*0.8 && cx < 6 && placeWall(cx, cy, 'v', state.turn)) { syncOnlineMove(); next(); return; }
         if(my > CELL*0.8 && cy < 6 && placeWall(cx, cy, 'h', state.turn)) { syncOnlineMove(); next(); return; }
 
-        // Hareket Etme
         let p = state.players[state.turn];
         if(Math.abs(cx-p.x)+Math.abs(cy-p.y)===1 && !isBlocked(p.x,p.y,cx,cy,state.walls)) {
             p.x=cx; p.y=cy; 
@@ -344,17 +333,14 @@
         if(!state.over && state.mode === 'bot' && state.turn === 1) setTimeout(botAction, 300);
     }
 
-    // --- 8. AKILLI BOT (ÇÖKMEYEN VERSİYON) ---
     function botAction() {
         if (state.over) return;
         let b = state.players[1], p = state.players[0];
         let pDist = getPathLen(p.x, p.y, 0, state.walls);
         let bDist = getPathLen(b.x, b.y, 6, state.walls);
-
-        // İmkansız modda akıllı engel denemesi
         if (state.diff === 'insane' && b.w > 0 && pDist < bDist && Math.random() > 0.4) {
             let orientations = ['h', 'v'];
-            for(let i=0; i<8; i++) { // Sınırlı deneme ile çökmeyi önler
+            for(let i=0; i<8; i++) {
                 let rx = p.x + Math.floor(Math.random()*3)-1;
                 let ry = p.y + Math.floor(Math.random()*3)-1;
                 if(rx>=0 && rx<6 && ry>=0 && ry<6 && placeWall(rx, ry, orientations[i%2], 1)) {
@@ -362,13 +348,10 @@
                 }
             }
         }
-
-        // En kısa yola yürü
         let moves = [[0,1],[1,0],[-1,0],[0,-1]].filter(m => {
             let nx=b.x+m[0], ny=b.y+m[1];
             return nx>=0 && nx<GRID && ny>=0 && ny<GRID && !isBlocked(b.x,b.y,nx,ny,state.walls);
         }).sort((a, b_m) => getPathLen(b.x+a[0], b.y+a[1], 6, state.walls) - getPathLen(b.x+b_m[0], b.y+b_m[1], 6, state.walls));
-
         if (moves.length) { b.x += moves[0][0]; b.y += moves[0][1]; }
         if (b.y === 6) end("BOT KAZANDI!"); else next();
     }
