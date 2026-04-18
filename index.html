@@ -3,224 +3,401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Barricade Platinum - Full Pro</title>
+    <title>Barricade Platinum Plus</title>
+    <!-- Firebase SDK (Bağlantı için gerekli) -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
     <style>
-        :root { --orange: #ff8c00; --bg: #030303; --card: #111; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow: hidden; }
+        :root { --orange: #ff8c00; --bg: #030303; --card: #111; --blue: #00e5ff; }
+        body { 
+            background: var(--bg); color: white; font-family: sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; overflow: hidden;
+        }
+
+        .profile-bar {
+            width: 100%; max-width: 350px; background: var(--card); padding: 15px;
+            border-radius: 15px; border: 2px solid #222; margin-bottom: 15px;
+            box-shadow: 0 0 10px rgba(255, 140, 0, 0.1);
+        }
+        .id-label { font-size: 0.65rem; color: var(--orange); letter-spacing: 2px; font-weight: bold; margin-bottom: 5px; }
+        .id-value { font-size: 1rem; color: #fff; font-weight: 900; font-family: monospace; margin-bottom: 10px; }
         
-        .id-badge { background: #0a0a0a; border: 1px solid #222; padding: 8px 15px; border-radius: 10px; margin-bottom: 15px; border-bottom: 3px solid var(--orange); text-align: center; }
-        .game-title { color: var(--orange); font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; }
+        .name-edit-area { display: flex; gap: 8px; }
+        .name-input-mini {
+            flex: 1; background: #000; border: 1px solid #333; color: #fff;
+            padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; outline: none; transition: 0.3s;
+        }
+        .name-input-mini:focus { border-color: var(--orange); box-shadow: 0 0 8px var(--orange); }
+        .btn-save-mini {
+            background: var(--orange); color: #000; border: none; padding: 0 15px;
+            border-radius: 8px; font-weight: 900; font-size: 0.7rem; cursor: pointer;
+        }
 
-        .scoreboard { display: flex; gap: 10px; margin: 15px 0; width: 330px; }
-        .score-card { flex: 1; background: var(--card); border: 2px solid #222; border-radius: 12px; padding: 10px; text-align: center; transition: 0.3s; }
-        .score-card.active { border-color: var(--orange); box-shadow: 0 0 10px rgba(255,140,0,0.3); }
-        .score-card .val { font-size: 1.5rem; font-weight: 900; color: var(--orange); }
+        .header { text-align: center; margin-bottom: 10px; }
+        h1 { margin: 0; font-size: 1.1rem; color: var(--orange); letter-spacing: 1.5px; font-weight: 900; }
+        #msg { color: #fff; font-size: 0.8rem; min-height: 18px; margin: 5px 0; font-weight: bold; }
 
-        .controls { display: flex; gap: 8px; width: 330px; margin-bottom: 10px; }
-        .btn-act { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
-        .btn-act.active { background: var(--orange); color: #000; border-color: var(--orange); }
+        .scoreboard { display: flex; gap: 8px; width: 100%; max-width: 350px; margin-bottom: 10px; }
+        .card { 
+            flex: 1; background: var(--card); border: 2px solid #222; padding: 8px; 
+            border-radius: 12px; text-align: center;
+        }
+        .card.active { border-color: var(--orange); box-shadow: 0 0 15px var(--orange); }
+        .num { font-size: 1.6rem; color: var(--orange); font-weight: 900; }
+        .timer { font-size: 0.8rem; color: #fff; margin-top: 5px; font-family: monospace; }
 
-        .canvas-area { position: relative; border: 3px solid #1a1a1a; border-radius: 15px; background: #000; }
-        canvas { border-radius: 12px; touch-action: none; }
+        .mode-selection { display: flex; gap: 5px; width: 100%; max-width: 350px; margin-bottom: 10px; }
+        .btn-main { 
+            flex: 1; padding: 12px 5px; font-size: 0.65rem; font-weight: 900; 
+            background: #000; border: 2px solid #333; border-radius: 8px; cursor: pointer; color: #fff; transition: 0.2s;
+        }
+        .btn-main.active[data-mode="bot"] { border-color: var(--orange); background: var(--orange); color: #000; }
+        .btn-main.active[data-mode="pvp"] { border-color: var(--blue); background: var(--blue); color: #000; }
+        .btn-main.active[data-mode="online"] { border-color: #f1c40f; background: #f1c40f; color: #000; }
 
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-box { background: #000; border: 2px solid var(--orange); border-radius: 20px; width: 280px; padding: 25px; text-align: center; }
-        .modal-btn { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--orange); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; text-align: center; box-sizing: border-box; }
+        .diff-selection { display: flex; gap: 4px; margin-bottom: 10px; }
+        .btn-diff { 
+            background: #111; color: #555; border: 1px solid #333; 
+            padding: 6px 12px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; cursor: pointer;
+        }
+        .btn-diff.active { border-color: #fff; color: #fff; background: #222; }
+
+        .canvas-container { border: 3px solid #1a1a1a; border-radius: 15px; background: #000; }
+        canvas { display: block; touch-action: none; border-radius: 12px; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal-box {
+            background: #000; border: 2px solid var(--orange); border-radius: 20px;
+            padding: 25px; width: 280px; text-align: center; box-shadow: 0 0 30px var(--orange);
+        }
+        .neon-input {
+            background: #111; border: 1px solid var(--orange); color: white;
+            padding: 12px; border-radius: 10px; width: 100%; margin: 15px 0; outline: none; text-align: center; box-sizing: border-box;
+        }
+        .btn-action {
+            background: var(--orange); color: #000; border: none; padding: 12px; 
+            border-radius: 10px; font-weight: 900; width: 100%; cursor: pointer; margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="id-badge">
-        <div style="font-size: 0.6rem; color: var(--orange);">MY ID</div>
-        <div id="my-id-display" style="font-weight: 900;">-----</div>
+    <div class="profile-bar">
+        <div class="id-label">MY BARRICADE ID</div>
+        <div class="id-value" id="display-my-id">---</div>
+        <div class="name-edit-area">
+            <input type="text" id="user-name-input" class="name-input-mini" placeholder="Yeni İsim..." maxlength="12">
+            <button class="btn-save-mini" onclick="updateName()">SET</button>
+        </div>
     </div>
 
-    <div class="game-title">BARRICADE PLATINUM</div>
+    <div id="room-screen" class="modal-overlay" style="display:none">
+        <div class="modal-box">
+            <h1 style="font-size: 1.1rem; color: var(--orange);">ONLINE LOBBY</h1>
+            <input type="text" id="target-room-id" class="neon-input" placeholder="Rakip ID Giriniz">
+            <label style="font-size:0.7rem; color:#888">SÜRE LİMİTİ</label>
+            <select id="time-limit" class="neon-input">
+                <option value="0">SINIRSIZ</option>
+                <option value="180">3 DAKİKA</option>
+                <option value="300">5 DAKİKA</option>
+            </select>
+            <button class="btn-action" onclick="startOnlineRoom()">EŞLEŞMEYİ BAŞLAT</button>
+            <button class="btn-action" style="background:#222; color:#fff" onclick="toggleRoomModal(false)">GERİ DÖN</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>BARRICADE PLATINUM</h1>
+        <div id="msg">SİSTEM ÇEVRİMİÇİ</div>
+    </div>
 
     <div class="scoreboard">
-        <div id="card0" class="score-card active">
-            <div style="font-size: 0.6rem;">OYUNCU 1</div>
-            <div id="w0" class="val">10</div>
+        <div id="c0" class="card active">
+            <small id="name-p1" style="color:var(--orange); font-weight:bold">PLAYER</small>
+            <div class="num" id="w0">10</div>
+            <div class="timer" id="t0">--:--</div>
         </div>
-        <div id="card1" class="score-card">
-            <div style="font-size: 0.6rem;">OYUNCU 2</div>
-            <div id="w1" class="val">10</div>
+        <div id="c1" class="card">
+            <small id="p2-label">BOT</small>
+            <div class="num" id="w1">10</div>
+            <div class="timer" id="t1">--:--</div>
         </div>
     </div>
 
-    <div class="controls">
-        <button id="btn-move" class="btn-act active" onclick="setMode('move')">YÜRÜ</button>
-        <button id="btn-wall" class="btn-act" onclick="setMode('wall')">BARİKAT</button>
+    <div class="mode-selection">
+        <button id="m_bot" class="btn-main active" data-mode="bot" onclick="setMode('bot')">BOT</button>
+        <button id="m_pvp" class="btn-main" data-mode="pvp" onclick="setMode('pvp')">2 KİŞİ</button>
+        <button id="m_online" class="btn-main" data-mode="online" onclick="toggleRoomModal(true)">ONLINE</button>
     </div>
 
-    <div class="canvas-area">
+    <div class="diff-selection" id="diff-box">
+        <button id="d_easy" class="btn-diff" onclick="setDiff('easy')">KOLAY</button>
+        <button id="d_hard" class="btn-diff" onclick="setDiff('hard')">ZOR</button>
+        <button id="d_insane" class="btn-diff active" onclick="setDiff('insane')">İMKANSIZ</button>
+    </div>
+
+    <div class="canvas-container">
         <canvas id="game" width="350" height="350"></canvas>
     </div>
 
-    <div id="room-info" style="margin-top: 10px; font-size: 0.7rem; color: #555;">ODA: ----</div>
-
-    <div id="login-modal" class="modal-overlay">
-        <div class="modal-box">
-            <h2 style="color: var(--orange); margin-top:0;">BAŞLAT</h2>
-            <button class="modal-btn" onclick="createRoom()">ODA KUR</button>
-            <div style="margin: 10px 0; color: #333;">— VEYA —</div>
-            <input type="text" id="join-input" placeholder="4 HANELİ KOD" maxlength="4">
-            <button class="modal-btn" style="background:#222; color:#fff;" onclick="joinRoom()">ODAYA KATIL</button>
-        </div>
-    </div>
-
 <script>
+    // --- FIREBASE KURULUMU ---
+    // Buradaki bilgileri Firebase Konsolundan kendi bilgilerinle değiştir
     const firebaseConfig = {
-        apiKey: "AIzaSyBdsGqK7JBt0Bg5w-w23mQsKrvBFOgtAGw",
+        apiKey: "YOUR_API_KEY",
         authDomain: "barricade-platinum-plus.firebaseapp.com",
+        databaseURL: "https://barricade-platinum-plus-default-rtdb.firebaseio.com",
         projectId: "barricade-platinum-plus",
-        databaseURL: "https://barricade-platinum-plus-default-rtdb.firebaseio.com"
+        storageBucket: "barricade-platinum-plus.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const CELL = 50, GRID = 7;
-
-    let myId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    document.getElementById('my-id-display').innerText = myId;
-
-    let roomRef = null;
-    let myRole = null; 
-    let playMode = 'move';
+    const GRID = 7, CELL = 350/7;
+    
     let state = {
-        turn: 0, 
-        walls: [], 
-        players: [{x:3, y:6, w:10, c:'#ff4757', ty:0}, {x:3, y:0, w:10, c:'#2e86de', ty:6}],
-        status: "waiting"
+        turn: 0, walls: [], over: false, mode: 'bot', diff: 'insane',
+        players: [{x:3, y:6, w:10, c:'#ff4757', ty:0, time: 0}, {x:3, y:0, w:10, c:'#2e86de', ty:6, time: 0}],
+        timerInterval: null
     };
 
-    function setMode(m) {
-        if(state.turn !== myRole) return;
-        playMode = m;
-        document.getElementById('btn-move').classList.toggle('active', m === 'move');
-        document.getElementById('btn-wall').classList.toggle('active', m === 'wall');
-    }
+    let currentRoom = null;
+    let myRole = null; // 'host' (p1) veya 'guest' (p2)
 
-    // --- KURAL 1: DUVAR KONTROLÜ (HAREKET) ---
-    function isMoveBlocked(x1, y1, x2, y2) {
-        return state.walls.some(w => {
-            if (w.t === 'h') {
-                return (y1 === w.y && y2 === w.y + 1 || y1 === w.y + 1 && y2 === w.y) && x1 === w.x;
-            } else {
-                return (x1 === w.x && x2 === w.x + 1 || x1 === w.x + 1 && x2 === w.x) && y1 === w.y;
+    function initUser() {
+        let myId = localStorage.getItem('barricade_fixed_id');
+        if(!myId) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            myId = '';
+            for(let i=0; i<8; i++) {
+                myId += chars.charAt(Math.floor(Math.random() * chars.length));
+                if(i === 3) myId += "-";
             }
-        });
+            localStorage.setItem('barricade_fixed_id', myId);
+        }
+        document.getElementById('display-my-id').innerText = myId;
+        
+        let savedName = localStorage.getItem('barricade_name') || "PLAYER";
+        document.getElementById('name-p1').innerText = savedName.toUpperCase();
+        document.getElementById('user-name-input').value = savedName;
     }
 
-    // --- KURAL 2: YOL KONTROLÜ (BFS ALGORİTMASI) ---
-    function hasPath(playerIdx, tempWalls) {
-        const p = state.players[playerIdx];
-        const targetY = p.ty;
-        let queue = [{x: p.x, y: p.y}];
-        let visited = new Set();
-        visited.add(`${p.x},${p.y}`);
+    function updateName() {
+        const input = document.getElementById('user-name-input');
+        const val = input.value.trim().substring(0, 12);
+        if(val.length >= 2) {
+            localStorage.setItem('barricade_name', val);
+            document.getElementById('name-p1').innerText = val.toUpperCase();
+            document.getElementById('msg').innerText = "İSİM KAYDEDİLDİ";
+            input.blur();
+        }
+    }
 
-        while(queue.length > 0) {
-            let curr = queue.shift();
-            if(curr.y === targetY) return true;
+    function toggleRoomModal(s) { 
+        document.getElementById('room-screen').style.display = s ? 'flex' : 'none'; 
+    }
 
-            const neighbors = [
-                {x: curr.x, y: curr.y-1}, {x: curr.x, y: curr.y+1},
-                {x: curr.x-1, y: curr.y}, {x: curr.x+1, y: curr.y}
-            ];
+    function setMode(m) {
+        if(currentRoom) db.ref('rooms/' + currentRoom).off();
+        currentRoom = null;
+        state.mode = m;
+        document.querySelectorAll('.btn-main').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-mode') === m);
+        });
+        document.getElementById('diff-box').style.visibility = (m === 'bot') ? 'visible' : 'hidden';
+        document.getElementById('p2-label').innerText = (m === 'pvp' || m === 'online') ? "RAKİP" : "BOT";
+        reset();
+    }
 
-            for(let n of neighbors) {
-                if(n.x >= 0 && n.x < GRID && n.y >= 0 && n.y < GRID) {
-                    if(!visited.has(`${n.x},${n.y}`)) {
-                        // Geçici duvarları kontrol et
-                        const blocked = tempWalls.some(w => {
-                            if (w.t === 'h') return (curr.y === w.y && n.y === w.y + 1 || curr.y === w.y + 1 && n.y === w.y) && curr.x === w.x;
-                            else return (curr.x === w.x && n.x === w.x + 1 || curr.x === w.x + 1 && n.x === w.x) && curr.y === w.y;
-                        });
-                        if(!blocked) {
-                            visited.add(`${n.x},${n.y}`);
-                            queue.push(n);
-                        }
-                    }
+    function setDiff(d) {
+        state.diff = d;
+        document.querySelectorAll('.btn-diff').forEach(b => b.classList.remove('active'));
+        document.getElementById('d_'+d).classList.add('active');
+        reset();
+    }
+
+    function reset() {
+        clearInterval(state.timerInterval);
+        state.players[0].x=3; state.players[0].y=6; state.players[0].w=10;
+        state.players[1].x=3; state.players[1].y=0; state.players[1].w=10;
+        state.walls=[]; state.turn=0; state.over=false;
+        document.getElementById('msg').innerText = "SIRA SENDE";
+        updateTimerDisplay();
+        draw();
+    }
+
+    // --- ONLINE LOBBY VE SYNC ---
+    function startOnlineRoom() {
+        const targetId = document.getElementById('target-room-id').value.trim();
+        const myId = localStorage.getItem('barricade_fixed_id');
+        if(targetId.length < 5) return;
+
+        currentRoom = targetId;
+        const roomRef = db.ref('rooms/' + targetId);
+
+        roomRef.once('value', (snapshot) => {
+            if (!snapshot.exists()) {
+                myRole = 'host';
+                state.mode = 'online';
+                roomRef.set({ state: state, hostId: myId, status: 'waiting' });
+                document.getElementById('msg').innerText = "ODA KURULDU, RAKİP BEKLENİYOR...";
+            } else {
+                myRole = 'guest';
+                state.mode = 'online';
+                roomRef.update({ status: 'playing', guestId: myId });
+                document.getElementById('msg').innerText = "OYUNA BAĞLANDIN!";
+            }
+            listenToRoom();
+        });
+        toggleRoomModal(false);
+    }
+
+    function listenToRoom() {
+        db.ref('rooms/' + currentRoom + '/state').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                state = data;
+                draw();
+                if ((myRole === 'host' && state.turn === 0) || (myRole === 'guest' && state.turn === 1)) {
+                    document.getElementById('msg').innerText = "SENİN SIRAN!";
+                } else {
+                    document.getElementById('msg').innerText = "RAKİP SIRASI...";
                 }
             }
+        });
+    }
+
+    function syncOnlineMove() {
+        if (state.mode === 'online' && currentRoom) {
+            db.ref('rooms/' + currentRoom + '/state').set(state);
         }
-        return false;
     }
 
-    // --- OYUN FONKSİYONLARI ---
-    function createRoom() {
-        const code = Math.floor(1000 + Math.random() * 9000).toString();
-        myRole = 0;
-        roomRef = db.ref('rooms/' + code);
-        roomRef.set({ state, status: "waiting", p1: myId });
-        startSync(code);
-    }
-
-    function joinRoom() {
-        const code = document.getElementById('join-input').value.trim();
-        roomRef = db.ref('rooms/' + code);
-        roomRef.once('value', s => {
-            if(!s.exists()) return alert("Oda yok!");
-            myRole = 1;
-            roomRef.update({ status: "playing", p2: myId });
-            startSync(code);
+    function updateTimerDisplay() {
+        [0,1].forEach(i => {
+            const p = state.players[i];
+            document.getElementById('t'+i).innerText = p.time > 0 ? 
+                `${Math.floor(p.time/60)}:${(p.time%60).toString().padStart(2,'0')}` : "--:--";
         });
-    }
-
-    function startSync(code) {
-        document.getElementById('login-modal').style.display = 'none';
-        document.getElementById('room-info').innerText = "ODA KODU: " + code;
-        roomRef.on('value', s => {
-            const data = s.val();
-            if(!data) return;
-            state = data.state;
-            state.status = data.status;
-            updateUI();
-            draw();
-        });
-    }
-
-    function updateUI() {
-        document.getElementById('w0').innerText = state.players[0].w;
-        document.getElementById('w1').innerText = state.players[1].w;
-        document.getElementById('card0').classList.toggle('active', state.turn === 0);
-        document.getElementById('card1').classList.toggle('active', state.turn === 1);
     }
 
     function draw() {
         ctx.fillStyle = '#000'; ctx.fillRect(0,0,350,350);
-        ctx.strokeStyle = '#1a1a1a';
-        for(let i=0; i<GRID; i++) for(let j=0; j<GRID; j++) ctx.strokeRect(i*CELL, j*CELL, CELL, CELL);
-
+        ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
+        for(let i=0; i<=GRID; i++) {
+            ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,350); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(350,i*CELL); ctx.stroke();
+        }
         state.walls.forEach(w => {
             ctx.fillStyle = '#ff8c00';
-            if(w.t === 'v') ctx.fillRect((w.x+1)*CELL-4, w.y*CELL+5, 8, CELL-10);
-            else ctx.fillRect(w.x*CELL+5, (w.y+1)*CELL-4, CELL-10, 8);
+            if(w.t === 'v') ctx.fillRect((w.x+1)*CELL-4, w.y*CELL+4, 8, CELL-8);
+            else ctx.fillRect(w.x*CELL+4, (w.y+1)*CELL-4, CELL-8, 8);
         });
-
         state.players.forEach((p, i) => {
-            ctx.beginPath(); ctx.arc(p.x*CELL+25, p.y*CELL+25, 18, 0, Math.PI*2);
+            ctx.beginPath(); ctx.arc(p.x*CELL+CELL/2, p.y*CELL+CELL/2, CELL*0.35, 0, Math.PI*2);
             ctx.fillStyle = p.c; ctx.fill();
             if(state.turn === i) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); }
         });
+        document.getElementById('w0').innerText = state.players[0].w;
+        document.getElementById('w1').innerText = state.players[1].w;
+        document.getElementById('c0').className = state.turn===0?'card active':'card';
+        document.getElementById('c1').className = state.turn===1?'card active':'card';
     }
 
-    canvas.onclick = (e) => {
-        if(state.turn !== myRole || state.status !== "playing") return;
-        const r = canvas.getBoundingClientRect();
-        const x = (e.clientX - r.left) * (350/r.width);
-        const y = (e.clientY - r.top) * (350/r.height);
-        const cx = Math.floor(x/CELL), cy = Math.floor(y/CELL);
+    function isBlocked(x1, y1, x2, y2, walls) {
+        if(x1 === x2) return walls.some(w => w.t === 'h' && w.x === x1 && w.y === Math.min(y1, y2));
+        if(y1 === y2) return walls.some(w => w.y === y1 && w.x === Math.min(x1, x2) && w.t === 'v');
+        return false;
+    }
 
-        if(playMode === 'move') {
-            let p = state.players[myRole];
-            if(Math.abs(cx - p.x) + Math.abs(cy - p.y) === 1) {
-                if(!isMoveBlocked(p.x, p.y, cx, cy)) {
-                    p.x = cx; p.y = cy;
-                    if(p.y
+    function getPathLen(px, py, ty, walls) {
+        let q = [{x:px, y:py, d:0}], vis = new Set([px+','+py]);
+        while(q.length) {
+            let c = q.shift(); if(c.y === ty) return c.d;
+            for(let [dx,dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+                let nx=c.x+dx, ny=c.y+dy;
+                if(nx>=0 && nx<GRID && ny>=0 && ny<GRID && !vis.has(nx+','+ny) !isBlocked(c.x,c.y,nx,ny,walls)) { vis.add(nx+','+ny); q.push({x:nx, y:ny, d:c.d+1}); } return 999; canvas.addEventListener('mousedown',> {
+        if(state.over) return;
+        // Online modda başkasının sırasıysa engelle
+        if(state.mode === 'online' && ((myRole === 'host' && state.turn !== 0) || (myRole === 'guest' && state.turn !== 1))) return;
+        if(state.mode === 'bot' && state.turn === 1) return;
+
+        const r = canvas.getBoundingClientRect();
+        const x = (e.clientX-r.left)*(350/r.width), y = (e.clientY-r.top)*(350/r.height);
+        const cx = Math.floor(x/CELL), cy = Math.floor(y/CELL), mx = x%CELL, my = y%CELL;
+
+        if(mx > CELL*0.8 && cx < 6 && placeWall(cx, cy, 'v', state.turn)) { syncOnlineMove(); next(); return; }
+        if(my > CELL*0.8 && cy < 6 && placeWall(cx, cy, 'h', state.turn)) { syncOnlineMove(); next(); return; }
+
+        let p = state.players[state.turn];
+        if(Math.abs(cx-p.x)+Math.abs(cy-p.y)===1 && !isBlocked(p.x,p.y,cx,cy,state.walls)) {
+            p.x=cx; p.y=cy; 
+            if(p.y === p.ty) end(state.turn === 0 ? "PLAYER 1 KAZANDI!" : "PLAYER 2 KAZANDI!"); 
+            else { syncOnlineMove(); next(); }
+        }
+    });
+
+    function placeWall(x, y, t, pIdx) {
+        if(state.players[pIdx].w <= 0) return false;
+        if(state.walls.some(w=>w.x===x && w.y===y && w.t===t)) return false;
+        let test = [...state.walls, {x,y,t}];
+        if(getPathLen(state.players[0].x, state.players[0].y, 0, test) < 999 && 
+           getPathLen(state.players[1].x, state.players[1].y, 6, test) < 999) {
+            state.walls.push({x,y,t}); state.players[pIdx].w--; return true;
+        }
+        return false;
+    }
+
+    function next() {
+        state.turn = 1 - state.turn; draw();
+        if(!state.over && state.mode === 'bot' && state.turn === 1) setTimeout(botAction, 300);
+    }
+
+    // --- AKILLI VE ÇÖKMEYEN BOT ---
+    function botAction() {
+        if (state.over) return;
+        let b = state.players[1], p = state.players[0];
+        let pDist = getPathLen(p.x, p.y, 0, state.walls);
+        let bDist = getPathLen(b.x, b.y, 6, state.walls);
+
+        // İmkansız modda akıllı engel koyma
+        if (state.diff === 'insane' && b.w > 0 && pDist < bDist && Math.random() > 0.4) {
+            let orientations = ['h', 'v'];
+            for(let i=0; i<10; i++) { // Max 10 deneme
+                let rx = p.x + Math.floor(Math.random()*3)-1;
+                let ry = p.y + Math.floor(Math.random()*3)-1;
+                if(rx>=0 && rx<6 && ry>=0 && ry<6 && placeWall(rx, ry, orientations[i%2], 1)) {
+                    next(); return;
+                }
+            }
+        }
+
+        let moves = [[0,1],[1,0],[-1,0],[0,-1]].filter(m => {
+            let nx=b.x+m[0], ny=b.y+m[1];
+            return nx>=0 && nx<GRID && ny>=0 && ny<GRID && !isBlocked(b.x,b.y,nx,ny,state.walls); }).sort((a,> getPathLen(b.x+a[0], b.y+a[1], 6, state.walls) - getPathLen(b.x+b_m[0], b.y+b_m[1], 6, state.walls));
+
+        if (moves.length) { b.x += moves[0][0]; b.y += moves[0][1]; }
+        if (b.y === 6) end("BOT KAZANDI!"); else next();
+    }
+
+    function end(m) { 
+        state.over=true; 
+        document.getElementById('msg').innerText = m; 
+        if(state.mode === 'online') syncOnlineMove();
+        draw(); 
+    }
+
+    initUser();
+    setMode('bot');
+</script>
+</body>
+</html>
